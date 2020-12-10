@@ -14,7 +14,7 @@
 
 # Image URL to use all building/pushing image targets
 VERSION             := $(shell cat VERSION)
-REGISTRY            := eu.gcr.io/gardener-project/gardener
+REGISTRY            := gcr.io/pingcap-public/gardener
 IMAGE_REPOSITORY    := $(REGISTRY)/etcd-druid
 IMAGE_TAG           := $(VERSION)
 BUILD_DIR           := build
