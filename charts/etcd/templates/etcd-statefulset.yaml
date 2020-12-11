@@ -46,6 +46,9 @@ spec:
 {{- if .Values.priorityClassName }}
       priorityClassName: {{ .Values.priorityClassName }}
 {{- end }}
+{{- if .Values.serviceAccount }}
+      serviceAccount: {{ .Values.serviceAccount }}
+{{- end }}
       containers:
       - name: etcd
         image: {{ .Values.etcd.image }}

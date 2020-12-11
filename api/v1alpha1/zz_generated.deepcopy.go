@@ -269,6 +269,11 @@ func (in *EtcdSpec) DeepCopyInto(out *EtcdSpec) {
 		*out = new(string)
 		**out = **in
 	}
+	if in.ServiceAccount != nil {
+		in, out := &in.ServiceAccount, &out.ServiceAccount
+		*out = new(string)
+		**out = **in
+	}
 	if in.StorageCapacity != nil {
 		in, out := &in.StorageCapacity, &out.StorageCapacity
 		x := (*in).DeepCopy()

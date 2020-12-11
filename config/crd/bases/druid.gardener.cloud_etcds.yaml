@@ -339,6 +339,8 @@ spec:
                     are ANDed.
                   type: object
               type: object
+            serviceAccount:
+              type: string
             storageCapacity:
               description: StorageCapacity defines the size of persistent volume.
               type: string

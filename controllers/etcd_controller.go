@@ -904,6 +904,10 @@ func (r *EtcdReconciler) getMapFromEtcd(etcd *druidv1alpha1.Etcd) (map[string]in
 		values["storageClass"] = etcd.Spec.StorageClass
 	}
 
+	if etcd.Spec.ServiceAccount != nil {
+		values["serviceAccount"] = etcd.Spec.ServiceAccount
+	}
+
 	if etcd.Spec.PriorityClassName != nil {
 		values["priorityClassName"] = *etcd.Spec.PriorityClassName
 	}

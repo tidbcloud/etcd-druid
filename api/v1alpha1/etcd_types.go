@@ -150,6 +150,8 @@ type EtcdSpec struct {
 	// More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#class-1
 	// +optional
 	StorageClass *string `json:"storageClass,omitempty"`
+	// +optional
+	ServiceAccount *string `json:"serviceAccount,omitempty"`
 	// StorageCapacity defines the size of persistent volume.
 	// +optional
 	StorageCapacity *resource.Quantity `json:"storageCapacity,omitempty"`
