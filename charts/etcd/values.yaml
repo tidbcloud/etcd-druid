@@ -51,5 +51,6 @@ storageCapacity: 16Gi
 
 store:
   storageProvider: ""
+  useCustomServiceAccount: false
   storePrefix: ""
   storageContainer: ""

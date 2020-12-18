@@ -202,7 +202,7 @@ spec:
             secretKeyRef:
               name: {{ .Values.store.storeSecret }}
               key: "storageKey"
-{{- else if eq .Values.store.storageProvider "GCS" }}
+{{- else if and (eq .Values.store.storageProvider "GCS") (.Values.store.useCustomServiceAccount) }}
         - name: "GOOGLE_APPLICATION_CREDENTIALS"
           value: "/root/.gcp/serviceaccount.json"
 {{- else if eq .Values.store.storageProvider "Swift" }}
