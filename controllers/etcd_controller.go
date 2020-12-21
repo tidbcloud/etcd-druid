@@ -35,6 +35,7 @@ import (
 	"github.com/gardener/gardener/pkg/utils/imagevector"
 	"github.com/gardener/gardener/pkg/utils/kubernetes/health"
 	gardenerretry "github.com/gardener/gardener/pkg/utils/retry"
+	k8serr "k8s.io/apimachinery/pkg/api/errors"
 
 	"github.com/sirupsen/logrus"
 
@@ -962,6 +963,12 @@ func GetServiceAccount(ctx context.Context, c client.Client, namespace string, n
 		return nil, err
 	}
 
+	if data == nil {
+		return &ServiceAccount{
+			Raw:       nil,
+		}, nil
+	}
+
 	privateKey, err := ExtractServiceAccountPrivateKey(data)
 	if err != nil {
 		return nil, err
@@ -979,6 +986,9 @@ func GetServiceAccount(ctx context.Context, c client.Client, namespace string, n
 func GetServiceAccountData(ctx context.Context, c client.Client, namespace string, name string) ([]byte, error) {
 	secret := &corev1.Secret{}
 	if err := c.Get(ctx, client.ObjectKey{Namespace: namespace, Name: name}, secret); err != nil {
+		if k8serr.IsNotFound(err) {
+			return nil, nil
+		}
 		return nil, err
 	}
 
