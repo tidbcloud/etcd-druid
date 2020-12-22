@@ -17,6 +17,7 @@ package controllers
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"path/filepath"
 	"reflect"
@@ -34,6 +35,7 @@ import (
 	"github.com/gardener/gardener/pkg/utils/imagevector"
 	"github.com/gardener/gardener/pkg/utils/kubernetes/health"
 	gardenerretry "github.com/gardener/gardener/pkg/utils/retry"
+	k8serr "k8s.io/apimachinery/pkg/api/errors"
 
 	"github.com/sirupsen/logrus"
 
@@ -64,6 +66,7 @@ var (
 )
 
 const (
+	ServiceAccountJSONField = "serviceaccount.json"
 	// FinalizerName is the name of the Plant finalizer.
 	FinalizerName = "druid.gardener.cloud/etcd-druid"
 	// DefaultImageVector is a constant for the path to the default image vector file.
@@ -929,6 +932,15 @@ func (r *EtcdReconciler) getMapFromEtcd(etcd *druidv1alpha1.Etcd) (map[string]in
 			"storageProvider":  storageProvider,
 		}
 		if etcd.Spec.Backup.Store.SecretRef != nil {
+
+			sa, err := GetServiceAccount(context.Background(), r.Client, etcd.ObjectMeta.Namespace, etcd.Spec.Backup.Store.SecretRef.Name)
+			if err != nil {
+				return nil, err
+			}
+			if sa.Raw != nil {
+				storeValues["useCustomServiceAccount"] = true
+			}
+
 			storeValues["storeSecret"] = etcd.Spec.Backup.Store.SecretRef.Name
 		}
 
@@ -936,6 +948,68 @@ func (r *EtcdReconciler) getMapFromEtcd(etcd *druidv1alpha1.Etcd) (map[string]in
 	}
 
 	return values, nil
+}
+
+// ServiceAccount represents a GCP service account.
+type ServiceAccount struct {
+	// Raw is the raw representation of the GCP service account.
+	Raw []byte
+}
+
+// GetServiceAccount retrieves the ServiceAccount from the secret with the given secret reference.
+func GetServiceAccount(ctx context.Context, c client.Client, namespace string, name string) (*ServiceAccount, error) {
+	data, err := GetServiceAccountData(ctx, c, namespace, name)
+	if err != nil {
+		return nil, err
+	}
+
+	if data == nil {
+		return &ServiceAccount{
+			Raw:       nil,
+		}, nil
+	}
+
+	privateKey, err := ExtractServiceAccountPrivateKey(data)
+	if err != nil {
+		return nil, err
+	}
+
+	if privateKey == "" {
+		data = nil
+	}
+	return &ServiceAccount{
+		Raw:       data,
+	}, nil
+}
+
+// GetServiceAccountData retrieves the service account specified by the secret reference.
+func GetServiceAccountData(ctx context.Context, c client.Client, namespace string, name string) ([]byte, error) {
+	secret := &corev1.Secret{}
+	if err := c.Get(ctx, client.ObjectKey{Namespace: namespace, Name: name}, secret); err != nil {
+		if k8serr.IsNotFound(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	data, ok := secret.Data[ServiceAccountJSONField]
+	if !ok {
+		return nil, nil
+	}
+
+	return data, nil
+}
+
+func ExtractServiceAccountPrivateKey(serviceAccountJSON []byte) (string, error) {
+	var serviceAccount struct {
+		PrivateKey string `json:"private_key"`
+	}
+
+	if err := json.Unmarshal(serviceAccountJSON, &serviceAccount); err != nil {
+		return "", err
+	}
+
+	return serviceAccount.PrivateKey, nil
 }
 
 func (r *EtcdReconciler) addFinalizersToDependantSecrets(ctx context.Context, etcd *druidv1alpha1.Etcd) error {
