@@ -937,7 +937,7 @@ func (r *EtcdReconciler) getMapFromEtcd(etcd *druidv1alpha1.Etcd) (map[string]in
 			if err != nil {
 				return nil, err
 			}
-			if sa != nil {
+			if sa != nil &&  len(sa.Raw) > 0 {
 				storeValues["useCustomServiceAccount"] = true
 			}
 
